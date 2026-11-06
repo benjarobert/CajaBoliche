@@ -18,8 +18,10 @@ app.get("/api/salud", (req, res) => {
   res.json({ ok: true, mensaje: "API andando" });
 });
 
-// TODO: rutas de cada integrante
+// Rutas de cada integrante
+app.use("/api", require("./routes/estadisticaRoutes"));
 // app.use("/api", require("./routes/ventaRoutes"));
+// app.use("/api", require("./routes/tableroRoutes"));
 
 app.use(errorHandler);
 
