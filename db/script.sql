@@ -16,6 +16,47 @@
 --   - Items de venta: JSON parseado con OPENJSON
 
 
+-- =====================================================================
+-- 0. BASE DE DATOS, LOGIN Y PERMISOS
+-- Hace que el script sea autosuficiente: se puede correr en una maquina
+-- limpia, sin crear nada a mano antes.
+-- =====================================================================
+
+-- 0.1 Crear la base solo si todavia no existe.
+-- Va dentro de un EXEC porque CREATE DATABASE tiene que ser la unica
+-- sentencia de su lote y no se puede escribir adentro de un IF.
+IF DB_ID('Boliche.RobertBertinoSuarez') IS NULL
+    EXEC ('CREATE DATABASE [Boliche.RobertBertinoSuarez]');
+GO
+
+-- 0.2 Crear el login a nivel servidor, solo si no existe.
+-- Si ya existe no se modifica, porque el mismo login puede estar en uso
+-- por otros trabajos de la materia.
+-- Contrasena en una instalacion nueva: Prog2.2026 (la misma de la catedra).
+-- CHECK_POLICY = OFF para que el script funcione igual en cualquier maquina,
+-- sin depender de la politica de contrasenas de Windows de cada una.
+IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = 'prog2')
+    CREATE LOGIN prog2 WITH PASSWORD = 'Prog2.2026',
+                            CHECK_POLICY = OFF,
+                            DEFAULT_DATABASE = [Boliche.RobertBertinoSuarez];
+GO
+
+-- 0.3 De aca en adelante, todo corre dentro de la base del proyecto.
+USE [Boliche.RobertBertinoSuarez];
+GO
+
+-- 0.4 Dar de alta el login como usuario de esta base y darle permisos:
+-- leer y escribir las tablas, y ejecutar los procedimientos almacenados.
+IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = 'prog2')
+    CREATE USER prog2 FOR LOGIN prog2;
+GO
+
+ALTER ROLE db_datareader ADD MEMBER prog2;
+ALTER ROLE db_datawriter ADD MEMBER prog2;
+GRANT EXECUTE TO prog2;
+GO
+
+
 DROP VIEW IF EXISTS v_ventas_detalle;
 DROP VIEW IF EXISTS v_caja_resumen;
 DROP PROCEDURE IF EXISTS usp_registrar_venta;
@@ -232,7 +273,7 @@ BEGIN
          WHERE p.stock < 0
     )
     BEGIN
-        ;THROW 50001, 'Stock insuficiente para alguno de los productos', 1;
+        THROW 50001, 'Stock insuficiente para alguno de los productos', 1;
     END
 END
 GO
@@ -251,7 +292,7 @@ BEGIN
           JOIN caja c ON c.id = i.caja_id
          WHERE c.estado = 'cerrada'
     )
-        ;THROW 50002, 'La caja seleccionada esta cerrada o no existe', 1;
+        THROW 50002, 'La caja seleccionada esta cerrada o no existe', 1;
 
     IF EXISTS (
         SELECT 1 FROM inserted i
@@ -262,7 +303,7 @@ BEGIN
                 OR e.estado <> 'activa'
                 OR e.saldo_actual < i.total)
     )
-        ;THROW 50003, 'Entrada invalida: tipo no coincide con la barra, no esta activa o no tiene saldo', 1;
+        THROW 50003, 'Entrada invalida: tipo no coincide con la barra, no esta activa o no tiene saldo', 1;
 
     UPDATE e
        SET e.saldo_actual = e.saldo_actual - i.total
@@ -349,13 +390,13 @@ BEGIN
              WHERE id = @cajero_id AND activo = 1
                AND (barra = @barra OR barra = 'ambas')
         )
-            ;THROW 50006, 'El cajero no existe o no tiene permiso para esta barra', 1;
+            THROW 50006, 'El cajero no existe o no tiene permiso para esta barra', 1;
 
         IF EXISTS (
             SELECT 1 FROM caja
              WHERE barra = @barra AND fecha = CAST(GETDATE() AS DATE)
         )
-            ;THROW 50007, 'Ya existe una caja hoy para esta barra', 1;
+            THROW 50007, 'Ya existe una caja hoy para esta barra', 1;
 
         INSERT INTO caja (barra, cajero_id, fecha, fondo_inicial)
         VALUES (@barra, @cajero_id, CAST(GETDATE() AS DATE), @fondo_inicial);
@@ -386,10 +427,10 @@ BEGIN
         SELECT @estado = estado FROM caja WHERE id = @caja_id;
 
         IF @estado IS NULL
-            ;THROW 50008, 'La caja no existe', 1;
+            THROW 50008, 'La caja no existe', 1;
 
         IF @estado = 'cerrada'
-            ;THROW 50009, 'La caja ya esta cerrada y no se puede reabrir', 1;
+            THROW 50009, 'La caja ya esta cerrada y no se puede reabrir', 1;
 
         UPDATE caja
            SET cerrada_en = SYSDATETIME(),
@@ -426,14 +467,14 @@ BEGIN
 
         -- Validar caja abierta
         IF NOT EXISTS (SELECT 1 FROM caja WHERE id = @caja_id AND estado = 'abierta')
-            ;THROW 50002, 'La caja no existe o esta cerrada', 1;
+            THROW 50002, 'La caja no existe o esta cerrada', 1;
 
         -- Resolver entrada si vino el codigo
         IF @codigo_entrada IS NOT NULL
         BEGIN
             SELECT @entrada_id = id FROM entrada WHERE codigo = @codigo_entrada;
             IF @entrada_id IS NULL
-                ;THROW 50011, 'Codigo de entrada no encontrado', 1;
+                THROW 50011, 'Codigo de entrada no encontrado', 1;
         END
 
         -- Parsear items del JSON
@@ -447,10 +488,10 @@ BEGIN
           );
 
         IF NOT EXISTS (SELECT 1 FROM @items)
-            ;THROW 50010, 'La venta no tiene items', 1;
+            THROW 50010, 'La venta no tiene items', 1;
 
         IF EXISTS (SELECT 1 FROM @items WHERE cantidad <= 0 OR producto_id IS NULL)
-            ;THROW 50010, 'Hay items con cantidad invalida', 1;
+            THROW 50010, 'Hay items con cantidad invalida', 1;
 
         -- Calcular total desde la BD (nunca desde el cliente)
         SELECT @total = SUM(p.precio * i.cantidad)
@@ -458,7 +499,7 @@ BEGIN
           JOIN producto p ON p.id = i.producto_id;
 
         IF @total IS NULL OR @total <= 0
-            ;THROW 50010, 'Items invalidos', 1;
+            THROW 50010, 'Items invalidos', 1;
 
         -- Insertar cabecera (los triggers validan caja/entrada y actualizan saldo+total_vendido)
         INSERT INTO venta (caja_id, entrada_id, medio_pago, cuotas, total)
@@ -499,10 +540,10 @@ BEGIN
              WHERE id = @anulada_por AND activo = 1
                AND rol = 'admin' AND pin_hash = @pin_hash
         )
-            ;THROW 50012, 'No autorizado para anular', 1;
+            THROW 50012, 'No autorizado para anular', 1;
 
         IF NOT EXISTS (SELECT 1 FROM venta WHERE id = @venta_id AND estado = 'pagada')
-            ;THROW 50013, 'La venta no existe o ya esta anulada', 1;
+            THROW 50013, 'La venta no existe o ya esta anulada', 1;
 
         UPDATE venta
            SET estado = 'anulada',
@@ -595,16 +636,16 @@ BEGIN
         SELECT @estado_actual = estado FROM entrada WHERE id = @entrada_id;
 
         IF @estado_actual IS NULL
-            ;THROW 50016, 'La entrada no existe', 1;
+            THROW 50016, 'La entrada no existe', 1;
 
         IF @nuevo_estado NOT IN ('consumida','caducada','anulada')
-            ;THROW 50014, 'Estado destino invalido', 1;
+            THROW 50014, 'Estado destino invalido', 1;
 
         IF NOT (
             (@estado_actual = 'activa'    AND @nuevo_estado IN ('consumida','caducada','anulada'))
          OR (@estado_actual = 'consumida' AND @nuevo_estado = 'caducada')
         )
-            ;THROW 50014, 'Transicion de estado no permitida', 1;
+            THROW 50014, 'Transicion de estado no permitida', 1;
 
         UPDATE entrada
            SET estado = @nuevo_estado
