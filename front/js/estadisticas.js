@@ -72,3 +72,39 @@ $("form-abrir").addEventListener("submit", async (e) => {
     mostrarMensaje(err.message, true);
   }
 });
+
+$("lista-cajas").addEventListener("click", async (e) => {
+  const boton = e.target.closest(".btn-cerrar");
+  if (!boton) return;
+  if (!confirm("¿Cerrar esta caja? Una vez cerrada no se puede reabrir.")) return;
+  try {
+    await cerrarCaja(boton.dataset.id);
+    mostrarMensaje("Caja cerrada");
+    await refrescar();
+  } catch (err) {
+    mostrarMensaje(err.message, true);
+  }
+});
+
+const MEDIOS = { efectivo: "Efectivo", debito: "Débito", credito: "Crédito", qr: "QR", entrada: "Entrada" };
+
+async function cargarResumen(cajaId) {
+  const { general, porMedio } = await resumenRecaudacion(cajaId);
+
+  $("total-recaudado").textContent = dinero(general.total_recaudado);
+  $("cantidad-ventas").textContent = `${general.cantidad_ventas} ventas`;
+
+  $("tabla-medios").innerHTML = porMedio.length === 0
+    ? `<tr><td colspan="3" class="vacio">Sin ventas registradas</td></tr>`
+    : porMedio.map((m) => `
+        <tr>
+          <td>${esc(MEDIOS[m.medio_pago] || m.medio_pago)}</td>
+          <td>${m.cantidad_ventas}</td>
+          <td>${dinero(m.recaudacion)}</td>
+        </tr>`).join("");
+}
+
+$("selector-caja").addEventListener("change", (e) =>
+  cargarResumen(e.target.value).catch((err) => mostrarMensaje(err.message, true)));
+
+
