@@ -15,11 +15,54 @@ POS para la barra de un boliche. Dos barras (general y VIP), stock por barra, co
 
 ## Cómo levantarlo
 
-1. Correr el script en SQL Server:
-2. Copiar `back/env.ejemplo` a `back/.env` y completarlo con los datos del servidor local.
-3. Instalar dependencias:
-4. Levantar el servidor:
-5. Abrir en el navegador: `http://localhost:3000`
+Hace falta tener instalados **Node.js 18 o superior** y **SQL Server** (alcanza con la edición Express).
+
+### 1. Clonar el repositorio
+
+```bash
+git clone https://github.com/benjarobert/CajaBoliche.git
+cd CajaBoliche
+```
+
+### 2. Crear la base de datos
+
+`db/script.sql` es autosuficiente: crea la base `Boliche.RobertBertinoSuarez`, crea el login `prog2` con sus permisos, las 6 tablas con sus FK, los datos de ejemplo, los 3 triggers, los 7 procedimientos y las 2 vistas. Se puede correr las veces que haga falta sin que rompa nada.
+
+Desde la línea de comandos, con autenticación de Windows:
+
+```bash
+sqlcmd -S localhost -E -i db/script.sql
+```
+
+Si la instancia tiene nombre y `localhost` solo no alcanza, usar `-S localhost\SQLEXPRESS`.
+
+También se puede abrir `db/script.sql` en SQL Server Management Studio y ejecutarlo con F5. No hace falta seleccionar ninguna base antes: el script la crea y se posiciona solo con un `USE`.
+
+### 3. Configurar las credenciales
+
+```bash
+cd back
+copy env.ejemplo .env
+```
+
+En Linux o Mac, `cp env.ejemplo .env`.
+
+Los valores que trae la plantilla ya coinciden con lo que crea el script, así que normalmente no hay que tocar nada. Si tu SQL Server no escucha en `localhost:1433`, ajustá `DB_SERVER` y `DB_PORT`.
+
+El `.env` real nunca se sube al repo: está en el `.gitignore`.
+
+### 4. Instalar dependencias y levantar el servidor
+
+```bash
+npm install
+npm start
+```
+
+Durante el desarrollo, `npm run dev` levanta lo mismo con nodemon y reinicia solo al guardar.
+
+### 5. Abrir el sistema
+
+Entrar a `http://localhost:3000`. El back sirve el front con `express.static`, así que no hay que levantar un segundo servidor para las páginas.
 
 ## Endpoints de la API
 
@@ -33,7 +76,7 @@ POS para la barra de un boliche. Dos barras (general y VIP), stock por barra, co
 | GET  | `/api/estadisticas/recaudacion`| Tomás    | resumen por medio de pago |
 | GET  | `/api/cajas`                   | Tomás    | lista cajas |
 | POST | `/api/cajas/abrir`             | Tomás    | abre una caja nueva |
-| POST | `/api/cajas/:id/cerrar`        | Tomás    | cierra una caja |
+| PUT  | `/api/cajas/:id/cerrar`        | Tomás    | cierra una caja |
 
 ## Base de datos
 
