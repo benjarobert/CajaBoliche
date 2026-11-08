@@ -40,4 +40,43 @@ async function listarCajas() {
   ];
 }
 
+// back/services/estadisticaService.js
+const { pool, sql } = require("../config/db"); // ajustá según cómo exporte db.js
+
+// -> usp_resumen_recaudacion: devuelve DOS result sets (por eso recordsets, plural)
+async function resumenRecaudacion(cajaId) {
+  const request = pool.request();
+  request.input("caja_id", sql.Int, cajaId ? Number(cajaId) : null);
+  const result = await request.execute("usp_resumen_recaudacion");
+  return {
+    general: result.recordsets[0][0], // { total_recaudado, cantidad_ventas }
+    porMedio: result.recordsets[1],   // una fila por medio de pago
+  };
+}
+
+// -> usp_abrir_caja: tiene un parámetro OUTPUT (caja_id)
+async function abrirCaja({ cajeroId, barra, fondoInicial }) {
+  const request = pool.request();
+  request.input("cajero_id", sql.Int, cajeroId);
+  request.input("barra", sql.VarChar(10), barra);
+  request.input("fondo_inicial", sql.Decimal(12, 2), fondoInicial);
+  request.output("caja_id", sql.Int);
+  const result = await request.execute("usp_abrir_caja");
+  return { cajaId: result.output.caja_id };
+}
+
+// -> usp_cerrar_caja
+async function cerrarCaja(id) {
+  const request = pool.request();
+  request.input("caja_id", sql.Int, Number(id));
+  await request.execute("usp_cerrar_caja");
+  return { id: Number(id), estado: "cerrada" };
+}
+
+// -> consulta directa a la vista (sin parámetros)
+async function listarCajas() {
+  const result = await pool.request().query("SELECT * FROM v_caja_resumen");
+  return result.recordset; // acá es recordset (singular): una sola consulta
+}
+
 module.exports = { resumenRecaudacion, abrirCaja, cerrarCaja, listarCajas };
