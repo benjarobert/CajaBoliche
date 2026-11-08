@@ -1,0 +1,55 @@
+<!-- front/estadisticas.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estadísticas y caja</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- NAV COMÚN: copiá acá el mismo nav de las otras páginas -->
+
+  <main class="contenedor">
+    <p id="mensaje" role="status"></p>
+
+    <section id="panel-abrir">
+      <h2>Abrir caja</h2>
+      <form id="form-abrir">
+        <label>Barra
+          <select id="barra" required>
+            <option value="general">General</option>
+            <option value="vip">VIP</option>
+          </select>
+        </label>
+        <label>Fondo inicial
+          <input type="number" id="fondo-inicial" min="0" step="0.01" required>
+        </label>
+        <button type="submit" class="btn-grande">Abrir caja</button>
+      </form>
+    </section>
+
+    <section id="panel-cajas">
+      <h2>Cajas abiertas</h2>
+      <div id="lista-cajas"></div>
+    </section>
+
+    <section id="panel-resumen">
+      <h2>Recaudación</h2>
+      <label>Caja
+        <select id="selector-caja"></select>
+      </label>
+      <p id="total-recaudado" class="total-grande">-</p>
+      <p id="cantidad-ventas"></p>
+      <table>
+        <thead>
+          <tr><th>Medio de pago</th><th>Ventas</th><th>Recaudación</th></tr>
+        </thead>
+        <tbody id="tabla-medios"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script type="module" src="js/estadisticas.js"></script>
+</body>
+</html>
