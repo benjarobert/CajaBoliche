@@ -34,3 +34,25 @@ export const registrarVenta = (datos) =>
 
 // --- Cajas (Tomas) ---
 export const listarCajas = () => pedir("/cajas");
+
+async function pedir(ruta, opciones = {}) {
+  const res = await fetch(`${API_URL}${ruta}`, {
+    headers: { "Content-Type": "application/json" },
+    ...opciones,
+  });
+  const datos = await res.json().catch(() => ({}));
+  // El backend responde { error: "..." } cuando algo falla
+  if (!res.ok) throw new Error(datos.error || `Error ${res.status}`);
+  return datos;
+}
+
+export const abrirCaja = (datos) =>
+  pedir("/cajas/abrir", { method: "POST", body: JSON.stringify(datos) });
+
+export const cerrarCaja = (id) =>
+  pedir(`/cajas/${id}/cerrar`, { method: "PUT" });
+
+export const resumenRecaudacion = (cajaId) =>
+  pedir(cajaId
+    ? `/estadisticas/recaudacion?cajaId=${encodeURIComponent(cajaId)}`
+    : "/estadisticas/recaudacion");
