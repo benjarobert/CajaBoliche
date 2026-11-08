@@ -52,4 +52,26 @@ async function registrarVenta({ cajaId, medioPago, cuotas, codigoEntrada, items 
   return { ventaId: resultado.output.venta_id };
 }
 
-module.exports = { listarProductos, registrarVenta };
+// Anula una venta llamando al procedimiento usp_anular_venta.
+// El procedimiento se encarga de dos controles antes de tocar nada:
+// que quien anula sea un admin activo con el PIN correcto (THROW 50012) y
+// que la venta exista y siga en estado 'pagada' (THROW 50013).
+// Despues del UPDATE, el trigger trg_venta_anular deshace la venta solo:
+// devuelve el stock, le devuelve el saldo a la entrada si se pago con una,
+// y le resta el total a la caja. Por eso aca no hay ninguna cuenta.
+async function anularVenta({ ventaId, usuarioId, pin }) {
+  const pool = await getPool();
+  const peticion = pool.request();
+
+  peticion.input("venta_id", sql.Int, ventaId);
+  peticion.input("anulada_por", sql.Int, usuarioId);
+  // En la tabla usuario el PIN vive en la columna pin_hash. Este proyecto no
+  // tiene hasheo: el seed guarda el texto tal cual, asi que lo mandamos como
+  // viene. En un sistema real aca iria la comparacion contra un hash.
+  peticion.input("pin_hash", sql.VarChar(255), pin);
+
+  await peticion.execute("usp_anular_venta");
+  return { ventaId };
+}
+
+module.exports = { listarProductos, registrarVenta, anularVenta };

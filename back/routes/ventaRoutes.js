@@ -9,5 +9,6 @@ const ventaController = require("../controllers/ventaController");
 
 router.get("/productos", asyncHandler(ventaController.getProductos));
 router.post("/ventas", asyncHandler(ventaController.postVenta));
+router.post("/ventas/:id/anular", asyncHandler(ventaController.postAnularVenta));
 
 module.exports = router;
