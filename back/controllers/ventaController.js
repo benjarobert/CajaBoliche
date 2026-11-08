@@ -11,4 +11,23 @@ async function getProductos(req, res) {
   res.json(productos);
 }
 
-module.exports = { getProductos };
+// POST /api/ventas
+// Espera un cuerpo con la caja, el medio de pago y los items del carrito:
+//   { "cajaId": 1, "medioPago": "efectivo",
+//     "items": [ { "producto_id": 1, "cantidad": 2 } ] }
+// Responde 201 con el id de la venta creada.
+async function postVenta(req, res) {
+  const { cajaId, medioPago, cuotas, codigoEntrada, items } = req.body;
+
+  const { ventaId } = await ventaService.registrarVenta({
+    cajaId,
+    medioPago,
+    cuotas,
+    codigoEntrada,
+    items,
+  });
+
+  res.status(201).json({ ventaId });
+}
+
+module.exports = { getProductos, postVenta };

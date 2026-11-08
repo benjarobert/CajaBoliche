@@ -8,5 +8,6 @@ const asyncHandler = require("../middlewares/asyncHandler");
 const ventaController = require("../controllers/ventaController");
 
 router.get("/productos", asyncHandler(ventaController.getProductos));
+router.post("/ventas", asyncHandler(ventaController.postVenta));
 
 module.exports = router;
