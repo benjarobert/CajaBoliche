@@ -16,6 +16,13 @@
 --   - Items de venta: JSON parseado con OPENJSON
 
 
+-- Necesario para los indices filtrados (los CREATE INDEX ... WHERE ...).
+-- SSMS deja esta opcion prendida por defecto, pero sqlcmd no, asi que sin
+-- esta linea el script falla al correrlo desde la linea de comandos.
+SET QUOTED_IDENTIFIER ON;
+GO
+
+
 -- =====================================================================
 -- 0. BASE DE DATOS, LOGIN Y PERMISOS
 -- Hace que el script sea autosuficiente: se puede correr en una maquina
@@ -255,6 +262,20 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- El stock se valida ANTES de descontarlo. La tabla producto tiene un
+    -- CHECK (stock >= 0): si descontaramos primero, esa restriccion cortaria
+    -- la operacion con un error generico en ingles y nunca se llegaria al
+    -- THROW con nuestro codigo 50001.
+    IF EXISTS (
+        SELECT 1
+          FROM producto p
+          JOIN (SELECT producto_id, SUM(cantidad) AS cantidad
+                  FROM inserted
+                 GROUP BY producto_id) i ON i.producto_id = p.id
+         WHERE p.stock < i.cantidad
+    )
+        THROW 50001, 'Stock insuficiente para alguno de los productos', 1;
+
     UPDATE vi
        SET vi.producto_nombre = p.nombre
       FROM venta_item vi
@@ -266,15 +287,6 @@ BEGIN
        SET p.stock = p.stock - i.cantidad
       FROM producto p
       JOIN inserted i ON i.producto_id = p.id;
-
-    IF EXISTS (
-        SELECT 1 FROM producto p
-          JOIN inserted i ON i.producto_id = p.id
-         WHERE p.stock < 0
-    )
-    BEGIN
-        THROW 50001, 'Stock insuficiente para alguno de los productos', 1;
-    END
 END
 GO
 
@@ -468,6 +480,16 @@ BEGIN
         -- Validar caja abierta
         IF NOT EXISTS (SELECT 1 FROM caja WHERE id = @caja_id AND estado = 'abierta')
             THROW 50002, 'La caja no existe o esta cerrada', 1;
+
+        -- Coherencia entre el medio de pago y los datos que lo acompanan.
+        -- La tabla venta ya exige estas dos combinaciones con un CHECK, pero
+        -- las validamos aca para devolver un codigo propio en vez de dejar
+        -- que salte la restriccion con un error generico en ingles.
+        IF @medio_pago = 'credito' AND @cuotas IS NULL
+            THROW 50004, 'El pago con credito necesita la cantidad de cuotas', 1;
+
+        IF @medio_pago = 'entrada' AND @codigo_entrada IS NULL
+            THROW 50005, 'El pago con entrada necesita el codigo de la entrada', 1;
 
         -- Resolver entrada si vino el codigo
         IF @codigo_entrada IS NOT NULL
