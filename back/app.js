@@ -20,7 +20,7 @@ app.get("/api/salud", (req, res) => {
 
 // Rutas de cada integrante
 app.use("/api", require("./routes/estadisticaRoutes"));
-// app.use("/api", require("./routes/ventaRoutes"));
+app.use("/api", require("./routes/ventaRoutes"));
 // app.use("/api", require("./routes/tableroRoutes"));
 
 app.use(errorHandler);
