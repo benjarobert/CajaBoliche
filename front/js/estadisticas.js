@@ -55,3 +55,20 @@ async function refrescar() {
 async function cargarResumen(cajaId) { /* se completa en el commit 4 */ }
 
 refrescar().catch((err) => mostrarMensaje(err.message, true));
+
+// TEMPORAL: sin login todavía, asignamos el cajero del seed según la barra
+const CAJEROS_POR_BARRA = { general: 2, vip: 3 };
+
+$("form-abrir").addEventListener("submit", async (e) => {
+  e.preventDefault(); // evita que el navegador recargue la página
+  const barra = $("barra").value;
+  const fondoInicial = Number($("fondo-inicial").value);
+  try {
+    await abrirCaja({ cajeroId: CAJEROS_POR_BARRA[barra], barra, fondoInicial });
+    mostrarMensaje("Caja abierta correctamente");
+    e.target.reset();
+    await refrescar();
+  } catch (err) {
+    mostrarMensaje(err.message, true);
+  }
+});
