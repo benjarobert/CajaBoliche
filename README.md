@@ -76,7 +76,7 @@ Entrar a `http://localhost:3000`. El back sirve el front con `express.static`, a
 | GET  | `/api/estadisticas/recaudacion`| Tomás    | resumen por medio de pago |
 | GET  | `/api/cajas`                   | Tomás    | lista cajas |
 | POST | `/api/cajas/abrir`             | Tomás    | abre una caja nueva |
-| POST | `/api/cajas/:id/cerrar`        | Tomás    | cierra una caja |
+| PUT  | `/api/cajas/:id/cerrar`        | Tomás    | cierra una caja |
 
 ## Base de datos
 
