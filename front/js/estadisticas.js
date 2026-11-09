@@ -52,8 +52,6 @@ async function refrescar() {
   await cargarResumen($("selector-caja").value);
 }
 
-async function cargarResumen(cajaId) { /* se completa en el commit 4 */ }
-
 refrescar().catch((err) => mostrarMensaje(err.message, true));
 
 // TEMPORAL: sin login todavía, asignamos el cajero del seed según la barra

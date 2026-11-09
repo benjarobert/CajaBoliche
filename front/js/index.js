@@ -31,7 +31,8 @@ let productos = [];
 let cajas = [];
 
 // ------------------------------------------------------------- DERIVADOS
-const cajaActual = () => cajas.find((c) => c.id === estado.cajaId) || null;
+// La vista v_caja_resumen llama caja_id a la clave de la caja, no id.
+const cajaActual = () => cajas.find((c) => c.caja_id === estado.cajaId) || null;
 
 // Cada barra vende lo suyo, mas lo que esta marcado como 'ambas'.
 function productosDeLaBarra() {
@@ -94,7 +95,7 @@ function pintarNav() {
   const opciones = cajas
     .map(
       (c) =>
-        `<option value="${c.id}" ${c.id === estado.cajaId ? "selected" : ""}>Barra ${c.barra} · caja #${c.id}</option>`
+        `<option value="${c.caja_id}" ${c.caja_id === estado.cajaId ? "selected" : ""}>Barra ${c.barra} · caja #${c.caja_id}</option>`
     )
     .join("");
 
@@ -244,7 +245,7 @@ async function cobrar() {
 
   // Al servidor viajan SOLO ids y cantidades. El total lo calcula la base.
   const datos = {
-    cajaId: cajaActual().id,
+    cajaId: cajaActual().caja_id,
     medioPago: estado.medioPago,
     items: lineas().map((l) => ({ producto_id: l.producto.id, cantidad: l.cantidad })),
   };
@@ -352,7 +353,7 @@ async function iniciar() {
     [productos, cajas] = await Promise.all([listarProductos(), listarCajas()]);
     const abiertas = cajas.filter((c) => c.estado === "abierta");
     cajas = abiertas.length ? abiertas : cajas;
-    if (cajas.length) estado.cajaId = cajas[0].id;
+    if (cajas.length) estado.cajaId = cajas[0].caja_id;
   } catch (error) {
     mostrarError("No se pudieron cargar los datos: " + error.message);
   }

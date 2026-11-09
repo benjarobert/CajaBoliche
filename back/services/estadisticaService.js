@@ -1,82 +1,59 @@
 // back/services/estadisticaService.js
-// Esqueleto: por ahora devuelve datos falsos (dummy).
-// Más adelante cada función llamará a su procedimiento almacenado.
+// Capa de acceso a datos de estadisticas y cajas.
+// Es el unico archivo de este flujo que habla SQL: ni el controller ni el
+// front saben que del otro lado hay un SQL Server.
+const { sql, getPool } = require("../config/db");
 
-// -> usp_resumen_recaudacion (cajaId opcional: sin cajaId = total general)
+// -> usp_resumen_recaudacion
+// El SP hace dos SELECT: primero el total general y despues el desglose por
+// medio de pago. Por eso se leen los recordsets (plural), uno por SELECT.
+// Sin cajaId devuelve el total de toda la noche.
 async function resumenRecaudacion(cajaId) {
+  const pool = await getPool();
+  const peticion = pool.request();
+  peticion.input("caja_id", sql.Int, cajaId ? Number(cajaId) : null);
+
+  const resultado = await peticion.execute("usp_resumen_recaudacion");
   return {
-    caja_id: cajaId ?? null,
-    total_recaudado: 150000,
-    cantidad_ventas: 32,
-    por_medio_pago: [
-      { medio_pago: "efectivo", cantidad_ventas: 15, recaudacion: 70000 },
-      { medio_pago: "debito",   cantidad_ventas: 10, recaudacion: 50000 },
-      { medio_pago: "qr",       cantidad_ventas: 7,  recaudacion: 30000 },
-    ],
+    general: resultado.recordsets[0][0], // { total_recaudado, cantidad_ventas }
+    porMedio: resultado.recordsets[1],   // una fila por medio de pago
   };
 }
 
-// -> usp_abrir_caja (recibe cajero_id, barra, fondo_inicial)
-async function abrirCaja(datos) {
-  return {
-    id: 1,
-    barra: datos?.barra ?? "general",
-    cajero_id: datos?.cajero_id ?? 2,
-    fondo_inicial: datos?.fondo_inicial ?? 20000,
-    estado: "abierta",
-  };
-}
-
-// -> usp_cerrar_caja (recibe el id de la caja)
-async function cerrarCaja(id) {
-  return { id: Number(id), estado: "cerrada" };
-}
-
-// -> v_caja_resumen (listado de cajas)
-async function listarCajas() {
-  return [
-    { id: 1, barra: "general", cajero: "Juan",    estado: "abierta", fondo_inicial: 20000, total_vendido: 90000 },
-    { id: 2, barra: "vip",     cajero: "Micaela", estado: "abierta", fondo_inicial: 20000, total_vendido: 60000 },
-  ];
-}
-
-// back/services/estadisticaService.js
-const { pool, sql } = require("../config/db"); // ajustá según cómo exporte db.js
-
-// -> usp_resumen_recaudacion: devuelve DOS result sets (por eso recordsets, plural)
-async function resumenRecaudacion(cajaId) {
-  const request = pool.request();
-  request.input("caja_id", sql.Int, cajaId ? Number(cajaId) : null);
-  const result = await request.execute("usp_resumen_recaudacion");
-  return {
-    general: result.recordsets[0][0], // { total_recaudado, cantidad_ventas }
-    porMedio: result.recordsets[1],   // una fila por medio de pago
-  };
-}
-
-// -> usp_abrir_caja: tiene un parámetro OUTPUT (caja_id)
+// -> usp_abrir_caja
+// El id de la caja nueva lo genera la base con IDENTITY y vuelve por un
+// parametro OUTPUT, no por un SELECT.
 async function abrirCaja({ cajeroId, barra, fondoInicial }) {
-  const request = pool.request();
-  request.input("cajero_id", sql.Int, cajeroId);
-  request.input("barra", sql.VarChar(10), barra);
-  request.input("fondo_inicial", sql.Decimal(12, 2), fondoInicial);
-  request.output("caja_id", sql.Int);
-  const result = await request.execute("usp_abrir_caja");
-  return { cajaId: result.output.caja_id };
+  const pool = await getPool();
+  const peticion = pool.request();
+  peticion.input("cajero_id", sql.Int, cajeroId);
+  peticion.input("barra", sql.VarChar(10), barra);
+  peticion.input("fondo_inicial", sql.Decimal(12, 2), fondoInicial);
+  peticion.output("caja_id", sql.Int);
+
+  const resultado = await peticion.execute("usp_abrir_caja");
+  return { cajaId: resultado.output.caja_id };
 }
 
 // -> usp_cerrar_caja
+// El SP valida que la caja exista (THROW 50008) y que no este ya cerrada
+// (THROW 50009). Esa regla vive en la base, no aca.
 async function cerrarCaja(id) {
-  const request = pool.request();
-  request.input("caja_id", sql.Int, Number(id));
-  await request.execute("usp_cerrar_caja");
+  const pool = await getPool();
+  const peticion = pool.request();
+  peticion.input("caja_id", sql.Int, Number(id));
+
+  await peticion.execute("usp_cerrar_caja");
   return { id: Number(id), estado: "cerrada" };
 }
 
-// -> consulta directa a la vista (sin parámetros)
+// -> v_caja_resumen
+// Consulta directa a la vista: una sola consulta, por eso el resultado se
+// lee de recordset (singular).
 async function listarCajas() {
-  const result = await pool.request().query("SELECT * FROM v_caja_resumen");
-  return result.recordset; // acá es recordset (singular): una sola consulta
+  const pool = await getPool();
+  const resultado = await pool.request().query("SELECT * FROM v_caja_resumen");
+  return resultado.recordset;
 }
 
 module.exports = { resumenRecaudacion, abrirCaja, cerrarCaja, listarCajas };

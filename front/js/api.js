@@ -35,17 +35,6 @@ export const registrarVenta = (datos) =>
 // --- Cajas (Tomas) ---
 export const listarCajas = () => pedir("/cajas");
 
-async function pedir(ruta, opciones = {}) {
-  const res = await fetch(`${API_URL}${ruta}`, {
-    headers: { "Content-Type": "application/json" },
-    ...opciones,
-  });
-  const datos = await res.json().catch(() => ({}));
-  // El backend responde { error: "..." } cuando algo falla
-  if (!res.ok) throw new Error(datos.error || `Error ${res.status}`);
-  return datos;
-}
-
 export const abrirCaja = (datos) =>
   pedir("/cajas/abrir", { method: "POST", body: JSON.stringify(datos) });
 
@@ -56,3 +45,25 @@ export const resumenRecaudacion = (cajaId) =>
   pedir(cajaId
     ? `/estadisticas/recaudacion?cajaId=${encodeURIComponent(cajaId)}`
     : "/estadisticas/recaudacion");
+
+// --- Tablero (Juan) ---
+// Los filtros vacios no viajan en la URL. El back los trata igual que si no
+// estuvieran, pero asi la direccion queda corta y se entiende de un vistazo.
+// URLSearchParams ademas escapa solo lo que haga falta, por ejemplo un
+// texto de busqueda con espacios o acentos.
+export const buscarVentas = (filtros = {}) => {
+  const parametros = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(filtros)) {
+    if (valor !== null && valor !== undefined && String(valor).trim() !== "") {
+      parametros.append(clave, String(valor).trim());
+    }
+  }
+  const consulta = parametros.toString();
+  return pedir("/ventas" + (consulta ? `?${consulta}` : ""));
+};
+
+export const cambiarEstadoEntrada = (id, estado) =>
+  pedir(`/entradas/${id}/estado`, {
+    method: "POST",
+    body: JSON.stringify({ estado }),
+  });
