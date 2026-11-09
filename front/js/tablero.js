@@ -9,7 +9,7 @@
 
 import { buscarVentas, cambiarEstadoEntrada } from "./api.js";
 import { navbar } from "../componentes/navbar.js";
-
+import { filaVenta } from "../componentes/filaVenta.js";
 
 const $ = (id) => document.getElementById(id);
 

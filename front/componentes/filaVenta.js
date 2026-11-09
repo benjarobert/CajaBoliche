@@ -120,3 +120,5 @@ export function filaVenta(venta) {
       <div class="t-cell end" role="cell">${celdaAcciones(venta)}</div>
     </div>`;
 }
+
+// a
