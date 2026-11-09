@@ -2,6 +2,7 @@
 -- Trabajo Final Integrador · Programación II
 --
 -- Contenido:
+--   0. Base de datos, login prog2 y permisos
 --   1. Esquema: 6 tablas con constraints
 --   2. Indices
 --   3. Datos de prueba (seed)
@@ -64,6 +65,8 @@ GRANT EXECUTE TO prog2;
 GO
 
 
+-- 0.5 Limpieza: borra lo anterior para que el script se pueda correr
+-- de nuevo sobre una base ya cargada sin que falle.
 DROP VIEW IF EXISTS v_ventas_detalle;
 DROP VIEW IF EXISTS v_caja_resumen;
 DROP PROCEDURE IF EXISTS usp_registrar_venta;
@@ -87,6 +90,12 @@ DROP TABLE IF EXISTS entrada;
 DROP TABLE IF EXISTS producto;
 DROP TABLE IF EXISTS usuario;
 GO
+
+-- =====================================================================
+-- 1. ESQUEMA
+-- Las 6 tablas con sus claves foraneas y sus CHECK.
+-- Las reglas que no se pueden saltear viven aca.
+-- =====================================================================
 
 -- 1.1 usuario
 CREATE TABLE usuario (
@@ -209,6 +218,13 @@ CREATE TABLE venta_item (
 );
 GO
 
+-- =====================================================================
+-- 2. INDICES
+-- Los tres con WHERE son indices filtrados: solo indexan las filas
+-- que cumplen la condicion. Por eso el script necesita
+-- SET QUOTED_IDENTIFIER ON al principio.
+-- =====================================================================
+
 CREATE INDEX idx_caja_estado_abierta ON caja(estado)       WHERE estado = 'abierta';
 CREATE INDEX idx_venta_caja          ON venta(caja_id);
 CREATE INDEX idx_venta_creada        ON venta(creada_en);
@@ -218,6 +234,12 @@ CREATE INDEX idx_entrada_activa      ON entrada(estado)    WHERE estado = 'activ
 GO
 
 
+
+-- =====================================================================
+-- 3. DATOS DE PRUEBA (SEED)
+-- Datos realistas en pesos argentinos, listos para la demo:
+-- incluye una caja abierta para hoy, asi se puede cobrar enseguida.
+-- =====================================================================
 
 INSERT INTO usuario (nombre, pin_hash, barra, rol) VALUES
     (N'Admin',   'hash_admin_demo', 'ambas',   'admin'),
@@ -253,6 +275,12 @@ GO
 
 
 
+
+-- =====================================================================
+-- 4. TRIGGERS
+-- Mantienen el stock, el saldo de las entradas y el total de la caja
+-- sincronizados solos. Ninguna de estas cuentas la hace el JavaScript.
+-- =====================================================================
 
 -- 4.1 Al insertar venta_item: autocompleta nombre y descuenta stock
 CREATE OR ALTER TRIGGER trg_venta_item_insert
@@ -683,6 +711,12 @@ END
 GO
 
 
+
+-- =====================================================================
+-- 6. VISTAS
+-- Consultas de lectura ya armadas, para no repetir los JOIN
+-- en cada procedimiento.
+-- =====================================================================
 
 CREATE OR ALTER VIEW v_ventas_detalle AS
 SELECT

@@ -80,4 +80,18 @@ Entrar a `http://localhost:3000`. El back sirve el front con `express.static`, a
 
 ## Base de datos
 
-6 tablas (`usuario`, `producto`, `entrada`, `caja`, `venta`, `venta_item`), 3 triggers, 7 procedimientos almacenados y 2 vistas. Documentación completa en `db/`.
+6 tablas (`usuario`, `producto`, `entrada`, `caja`, `venta`, `venta_item`), 3 triggers, 7 procedimientos almacenados y 2 vistas.
+
+Todo está en un único archivo, `db/script.sql`, dividido en siete secciones numeradas y comentadas en castellano:
+
+| Sección | Qué hace |
+|---|---|
+| 0 | Crea la base, el login `prog2` y sus permisos |
+| 1 | Las 6 tablas, con sus claves foráneas y sus `CHECK` |
+| 2 | Los índices (tres son filtrados) |
+| 3 | Los datos de ejemplo, incluida una caja abierta para hoy |
+| 4 | Los 3 triggers: stock, saldo de entradas y total de caja |
+| 5 | Los 7 procedimientos, todos con prefijo `usp_` |
+| 6 | Las 2 vistas de lectura |
+
+Las reglas de negocio viven en la base, no en el JavaScript: los `CHECK` de las tablas, los triggers y los `THROW` de los procedimientos (códigos propios desde el 50001). El back traduce esos códigos al estado HTTP que corresponde.
