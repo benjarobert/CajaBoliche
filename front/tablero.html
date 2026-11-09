@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tablero — Nocturna POS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+
+  <!-- La barra de navegacion la pinta el componente navbar.js -->
+  <div id="nav"></div>
+
+  <main class="page">
+
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Tablero de ventas</h1>
+        <p class="page-sub">Buscá ventas con filtros y cambiá el estado de las entradas.</p>
+      </div>
+    </div>
+
+    <div class="alert alert-danger" id="mensajeError" role="alert" hidden></div>
+    <div class="alert alert-ok" id="mensajeOk" role="status" hidden></div>
+
+    <!-- Los name coinciden con los filtros que espera GET /api/ventas -->
+    <form class="card filters" id="filtros">
+      <div class="field">
+        <label class="label" for="fechaDesde">Desde</label>
+        <input class="input" type="date" id="fechaDesde" name="fechaDesde">
+      </div>
+      <div class="field">
+        <label class="label" for="fechaHasta">Hasta</label>
+        <input class="input" type="date" id="fechaHasta" name="fechaHasta">
+      </div>
+      <div class="field">
+        <label class="label" for="barra">Barra</label>
+        <select class="input" id="barra" name="barra">
+          <option value="">Todas</option>
+          <option value="general">General</option>
+          <option value="vip">VIP</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="medioPago">Medio de pago</label>
+        <select class="input" id="medioPago" name="medioPago">
+          <option value="">Todos</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="debito">Débito</option>
+          <option value="credito">Crédito</option>
+          <option value="qr">QR</option>
+          <option value="entrada">Entrada</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="label" for="estado">Estado</label>
+        <select class="input" id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="pagada">Pagada</option>
+          <option value="anulada">Anulada</option>
+        </select>
+      </div>
+
+      <div class="field span-3">
+        <label class="label" for="texto">Producto</label>
+        <input class="input" type="search" id="texto" name="texto" maxlength="100"
+               placeholder="Producto vendido… (ej: fernet, red bull)" autocomplete="off">
+      </div>
+      <div class="filter-actions span-2">
+        <button type="submit" class="btn btn-primary btn-lg">Buscar</button>
+        <button type="reset" class="btn btn-ghost btn-lg">Limpiar</button>
+      </div>
+    </form>
+
+    <div class="results-bar">
+      <p class="results-count" id="contador" aria-live="polite"></p>
+    </div>
+
+    <div class="table-wrap">
+      <div class="t" role="table" aria-label="Ventas">
+        <div role="rowgroup">
+          <div class="t-row t-head" role="row">
+            <div class="t-cell" role="columnheader">N°</div>
+            <div class="t-cell" role="columnheader">Fecha</div>
+            <div class="t-cell" role="columnheader">Hora</div>
+            <div class="t-cell" role="columnheader">Cajero</div>
+            <div class="t-cell" role="columnheader">Pago</div>
+            <div class="t-cell" role="columnheader">Cuotas</div>
+            <div class="t-cell num" role="columnheader">Total</div>
+            <div class="t-cell" role="columnheader">Estado</div>
+            <div class="t-cell end" role="columnheader">Acciones</div>
+          </div>
+        </div>
+        <!-- Las filas las pinta js/tablero.js con el componente filaVenta -->
+        <div class="t-body" id="resultados" role="rowgroup"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script type="module" src="./js/tablero.js"></script>
+</body>
+</html>
