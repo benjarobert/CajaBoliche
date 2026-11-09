@@ -1,11 +1,23 @@
 // front/js/estadisticas.js
 import { listarCajas, abrirCaja, cerrarCaja, resumenRecaudacion } from "./api.js";
 import { badgeEstado } from "../componentes/badgeEstado.js";
+import { navbar } from "../componentes/navbar.js";
+
+// La barra de navegacion es la misma en las tres paginas. El parametro le
+// dice al componente cual de los tres links marcar como pagina actual.
+document.querySelector("#nav").innerHTML = navbar("estadisticas.html");
 
 const $ = (id) => document.getElementById(id);
 
-// Se reemplaza por Intl.NumberFormat en el commit 5
-const dinero = (valor) => String(valor ?? 0);
+// La consigna pide mostrar los importes con el formato argentino.
+// Intl.NumberFormat pone el signo, el punto de miles y la coma decimal solo.
+const pesos = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  maximumFractionDigits: 0,
+});
+
+const dinero = (valor) => pesos.format(Number(valor) || 0);
 
 // Los datos vienen de la base, pero igual los escapamos antes de usar innerHTML
 const esc = (t) => String(t ?? "")
@@ -15,7 +27,9 @@ const esc = (t) => String(t ?? "")
 function mostrarMensaje(texto, esError = false) {
   const el = $("mensaje");
   el.textContent = texto;
-  el.className = esError ? "error" : "ok";
+  // alert, alert-ok y alert-danger ya estan en style.css.
+  el.className = esError ? "alert alert-danger" : "alert alert-ok";
+  el.hidden = false;
 }
 
 async function cargarCajas() {
@@ -104,5 +118,4 @@ async function cargarResumen(cajaId) {
 
 $("selector-caja").addEventListener("change", (e) =>
   cargarResumen(e.target.value).catch((err) => mostrarMensaje(err.message, true)));
-
 
