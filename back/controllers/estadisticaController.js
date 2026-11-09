@@ -1,52 +1,35 @@
-// back/controllers/estadisticaController.js (arriba del todo)
-function responderError(res, error) {
-  const mapa = {
-    50006: 400, // cajero sin permiso para esa barra
-    50007: 409, // ya existe una caja hoy para esa barra
-    50008: 404, // la caja no existe
-    50009: 409, // la caja ya está cerrada
-  };
-  const status = mapa[error.number] || 500;
-  res.status(status).json({ error: error.message });
-}
 // back/controllers/estadisticaController.js
+// Capa HTTP de estadisticas y cajas: traduce la peticion web en una llamada
+// al service y devuelve la respuesta en JSON. No sabe nada de SQL.
+// No lleva try/catch: si algo falla, el asyncHandler manda el error al
+// middleware errorHandler, que lo traduce al codigo HTTP que corresponde.
 const estadisticaService = require("../services/estadisticaService");
 
+// GET /api/estadisticas/recaudacion?cajaId=1   (cajaId es opcional)
 async function resumenRecaudacion(req, res) {
-  try {
-    const { cajaId } = req.query; // opcional: /recaudacion?cajaId=1
-    const data = await estadisticaService.resumenRecaudacion(cajaId);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const { cajaId } = req.query;
+  const resumen = await estadisticaService.resumenRecaudacion(cajaId);
+  res.json(resumen);
 }
 
+// GET /api/cajas
 async function listarCajas(req, res) {
-  try {
-    const data = await estadisticaService.listarCajas();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const cajas = await estadisticaService.listarCajas();
+  res.json(cajas);
 }
 
+// POST /api/cajas/abrir
+// Espera { "cajeroId": 2, "barra": "general", "fondoInicial": 20000 }
 async function abrirCaja(req, res) {
-  try {
-    const data = await estadisticaService.abrirCaja(req.body);
-    res.status(201).json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const { cajeroId, barra, fondoInicial } = req.body;
+  const caja = await estadisticaService.abrirCaja({ cajeroId, barra, fondoInicial });
+  res.status(201).json(caja);
 }
 
+// PUT /api/cajas/:id/cerrar
 async function cerrarCaja(req, res) {
-  try {
-    const data = await estadisticaService.cerrarCaja(req.params.id);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  const caja = await estadisticaService.cerrarCaja(req.params.id);
+  res.json(caja);
 }
 
 module.exports = { resumenRecaudacion, listarCajas, abrirCaja, cerrarCaja };
