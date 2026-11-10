@@ -346,3 +346,34 @@ button { cursor: pointer; }
   .nav { padding: 0 16px; }
   .nav-link { padding: 0 14px; font-size: 16px; }
 }
+/* --- Lo que usa realmente la pantalla de estadisticas --- */
+.est-panel { display: flex; flex-direction: column; gap: 16px; padding: 20px 24px; }
+
+.caja-item {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px 24px; padding: 16px 0; border-bottom: 1px solid var(--border);
+}
+.caja-item:first-child { padding-top: 0; }
+.caja-item:last-child { padding-bottom: 0; border-bottom: 0; }
+.caja-item strong { margin-right: 8px; font-size: 18px; }
+.caja-item p { margin: 6px 0 0; font-size: 15px; color: var(--muted); }
+
+/* Cerrar una caja no se puede deshacer, por eso va en rojo como .btn-danger */
+.btn-cerrar {
+  min-height: 48px; padding: 0 20px; border-radius: 6px; white-space: nowrap;
+  background: transparent; border: 1px solid rgba(248, 113, 113, .55); color: var(--danger);
+  font-weight: 700; font-size: 16px;
+}
+.btn-cerrar:hover { background: var(--danger-soft); }
+
+.vacio { margin: 0; padding: 32px 16px; text-align: center; color: var(--muted); font-size: 15px; }
+
+/* La tabla de medios de pago no tenia estilos propios */
+#panel-resumen table { width: 100%; border-collapse: collapse; }
+#panel-resumen th {
+  padding: 12px 14px; text-align: left; background: var(--surface-3);
+  font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+}
+#panel-resumen td { padding: 14px; border-top: 1px solid var(--border); font-size: 15px; }
+#panel-resumen th:not(:first-child), #panel-resumen td:not(:first-child) { text-align: right; }
+#panel-resumen td.vacio { text-align: center; padding: 28px 14px; }
