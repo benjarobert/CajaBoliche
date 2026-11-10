@@ -7,7 +7,7 @@
 // que hay en el formulario, asi la pantalla siempre muestra lo que dice la
 // base.
 
-import { buscarVentas, cambiarEstadoEntrada } from "./api.js";
+import { buscarVentas, cambiarEstadoEntrada, anularVenta } from "./api.js";
 import { navbar } from "../componentes/navbar.js";
 import { filaVenta } from "../componentes/filaVenta.js";
 
@@ -124,6 +124,44 @@ tbody.addEventListener("click", async (e) => {
   } catch (err) {
     // El mensaje es el del THROW del procedimiento (por ejemplo,
     // "Transicion de estado no permitida").
+    boton.disabled = false;
+    mostrarError(err.message);
+  }
+});
+
+
+// ------------------------------------------------------------ ANULAR VENTA
+// TEMPORAL: todavia no hay login. Anulamos siempre como el admin del seed y
+// le pedimos el PIN en el momento. Cuando haya sesion, el id sale de ahi y el
+// PIN se pide una sola vez al entrar, no en cada anulacion.
+const ADMIN_ID = 1;
+
+tbody.addEventListener("click", async (e) => {
+  const boton = e.target.closest('[data-accion="anular-venta"]');
+  if (!boton) return;
+
+  const { ventaId } = boton.dataset;
+
+  // Anular dispara el trigger trg_venta_anular: devuelve el stock, le
+  // devuelve el saldo a la entrada si se pago con una, y le resta el total a
+  // la caja. Nada de eso se puede deshacer.
+  if (!confirm(`¿Anular la venta #${ventaId}? Se devuelve el stock y no se puede deshacer.`)) {
+    return;
+  }
+
+  const pin = prompt("PIN de administrador para anular la venta #" + ventaId);
+  if (!pin) return; // cancelo el prompt o lo dejo vacio
+
+  boton.disabled = true;
+  limpiarMensajes();
+
+  try {
+    await anularVenta(ventaId, { usuarioId: ADMIN_ID, pin });
+    mostrarOk(`La venta #${ventaId} quedó anulada y el stock volvió a su lugar.`);
+    await buscar(); // vuelve a pedir las ventas para ver el estado nuevo
+  } catch (err) {
+    // Si el PIN no coincide, el mensaje es el del THROW 50012 del
+    // procedimiento: "No autorizado para anular".
     boton.disabled = false;
     mostrarError(err.message);
   }

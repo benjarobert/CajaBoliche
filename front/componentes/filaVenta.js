@@ -80,21 +80,37 @@ function celdaPago(venta) {
   return `<span>${medio}</span>`;
 }
 
-// Celda de "Acciones": los botones de cambio de estado de la entrada de la
-// venta. Solo hay botones si se pago con entrada y todavia se puede cambiar.
+// Celda de "Acciones". Junta dos cosas distintas:
+//   - anular la venta entera (solo mientras siga pagada)
+//   - cambiar el estado de la entrada, si se pago con una
+// Los botones no hacen nada por si mismos: solo llevan data-attributes y
+// quien los escucha es js/tablero.js.
 function celdaAcciones(venta) {
-  const acciones = venta.entrada_id ? ACCIONES_ENTRADA[venta.entrada_estado] : null;
-  if (!acciones) return `<span class="cell-sub">—</span>`;
+  const botones = [];
 
-  return acciones
-    .map(
-      (a) => `<button type="button" class="btn btn-sm ${a.clase}"
+  // Una venta ya anulada no se puede volver a anular: usp_anular_venta la
+  // rechaza con un THROW 50013. El boton se esconde para no ofrecer algo que
+  // la base va a negar, pero la regla de verdad sigue estando en el
+  // procedimiento.
+  if (venta.estado === "pagada") {
+    botones.push(`<button type="button" class="btn btn-sm btn-danger"
+              data-accion="anular-venta"
+              data-venta-id="${venta.venta_id}">Anular venta</button>`);
+  }
+
+  const acciones = venta.entrada_id ? ACCIONES_ENTRADA[venta.entrada_estado] : null;
+  if (acciones) {
+    for (const a of acciones) {
+      botones.push(`<button type="button" class="btn btn-sm ${a.clase}"
               data-accion="cambiar-estado"
               data-entrada-id="${venta.entrada_id}"
               data-codigo="${esc(venta.entrada_codigo)}"
-              data-estado="${a.estado}">${a.texto}</button>`
-    )
-    .join("");
+              data-estado="${a.estado}">${a.texto}</button>`);
+    }
+  }
+
+  if (botones.length === 0) return `<span class="cell-sub">—</span>`;
+  return botones.join("");
 }
 
 export function filaVenta(venta) {

@@ -32,6 +32,11 @@ export const listarProductos = () => pedir("/productos");
 export const registrarVenta = (datos) =>
   pedir("/ventas", { method: "POST", body: JSON.stringify(datos) });
 
+// El procedimiento usp_anular_venta exige el id de un admin y su PIN. Como
+// todavia no hay login, el tablero los junta en el momento y los manda aca.
+export const anularVenta = (id, datos) =>
+  pedir(`/ventas/${id}/anular`, { method: "POST", body: JSON.stringify(datos) });
+
 // --- Cajas (Tomas) ---
 export const listarCajas = () => pedir("/cajas");
 
